@@ -1,2 +1,2 @@
 # PyCode
-python code repository
+this is my python code repository
