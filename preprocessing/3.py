@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+from sklearn import neighbors
+pd.DataFrame
+
 class Solution:
     def standardScale(self,df):
         df_new = df.drop("ID",axis=1)
