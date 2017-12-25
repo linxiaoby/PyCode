@@ -1,15 +1,17 @@
+#!/usr/bin/python2.6
+# -*- coding: utf-8 -*-
+#============
 from numpy import *
 import operator
 def createDataSet():
     group = array([[1.0, 1.1], [1.0, 1.0], [0, 0], [0, 0.1]])
     label = ['A', 'A', 'B', 'B']
     return group, label
-
-
+#============
 
 def classify0(inX, dataSet, labels, k = 3):
     '''
-    # KNN紧邻算法
+    # KNN近邻算法
     :param inX:要进行分类的向量
     :param dataSet: 已知类别标签的数据集
     :param labels:  类别标签，行数和dataSet一致
@@ -25,10 +27,11 @@ def classify0(inX, dataSet, labels, k = 3):
     classCount = {}
     for i in range(k):
         voteIlabel = labels[sortedDistIndicies[i]]
-        classCount[voteIlabel] = classCount.get(voteIlabel, 0) + 1
+        classCount[voteIlabel[0]] = classCount.get(voteIlabel[0], 0) + 1
     sortedClassCount = sorted(classCount.iteritems(), key = operator.itemgetter(1), reverse=True)
     return sortedClassCount[0][0]
 
+#============
 def autoNorm(dataSet):
     '''
     归一化函数
@@ -44,6 +47,7 @@ def autoNorm(dataSet):
     normDataSet =  normDataSet / tile(ranges, (m, 1))
     return normDataSet, ranges, minVals
 
+#============
 def datingClassTest():
     '''
     约会网站实例
@@ -64,4 +68,64 @@ def datingClassTest():
         if classifierResult != datingLabels[i]:
             errorCount += 1
     print "the error ratio is", errorCount / float(numTestVecs)
-datingClassTest()
+
+#==============================
+#手写数字识别实例
+from numpy import *
+filePath = "F:\\Datas\\MLiA_SourceCode\\machinelearninginaction\\Ch02\\digits\\trainingDigits"
+
+def img2Matrix(filename):
+    '''
+    将32*32的图像文件转换成1*1024的向量
+    :param filename:
+    :return: 转换之后的向量
+    '''
+    returnVec = zeros((1, 1024))
+    fileObj = open(filename)
+    for i in range(32):
+        lineStr = fileObj.readline()
+        for j in range(32):
+            returnVec[0, i * 32 + j] = int(lineStr[j])
+    return returnVec
+vec0 = img2Matrix("D:\\AllCode\\Datas\\MLinAction\\digits\\trainingDigits\\0_0.txt")
+print vec0[0,15]
+
+
+from numpy import *
+from os import listdir
+
+trainPath = "D:\\AllCode\\Datas\\MLinAction\\digits\\trainingDigits\\"
+def handWritingTest():
+    '''
+    手写数字识别系统的测试代码
+    :return:
+    '''
+    # 生成符合格式的训练集
+    trainDirList = listdir(trainPath)
+    trainSize = len(trainDirList)
+    trainMat = zeros((trainSize, 1024))
+    trainLable = zeros((trainSize, 1))
+    for i in range(trainSize):
+        lableStr = (trainDirList[i].split(".")[0]).split("_")[0]
+        label = int(lableStr)
+        trainLable[i] = label
+        trainMat[i, :] = img2Matrix(trainPath + trainDirList[i])
+
+    # 生成符合格式的测试集
+    testPath = "D:\\AllCode\\Datas\\MLinAction\\digits\\testDigits\\"
+    testDirList = listdir(testPath)
+    testSize = len(testDirList)
+    errorCnt = 0
+    for i in range(testSize):
+        lableStr = (testDirList[i].split(".")[0]).split("_")[0]
+        classNumStr = int(lableStr)
+        vectorUnderTest = img2Matrix(testPath + testDirList[i])
+        resultDig = classify0(vectorUnderTest, trainMat, trainLable, 3)
+        if (resultDig != classNumStr):
+            errorCnt += 1
+            print "the classifier came back with : %d, the real anwser is %d" %(resultDig, classNumStr)
+    print "the error rate is", errorCnt / float(trainSize)
+
+handWritingTest()
+
+#============
