@@ -111,7 +111,7 @@ def handWritingTest():
         trainLable[i] = label
         trainMat[i, :] = img2Matrix(trainPath + trainDirList[i])
 
-    # 生成符合格式的测试集
+    # 对测试集中的数字进行识别，并计算准确率
     testPath = "D:\\AllCode\\Datas\\MLinAction\\digits\\testDigits\\"
     testDirList = listdir(testPath)
     testSize = len(testDirList)
