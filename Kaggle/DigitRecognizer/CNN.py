@@ -1,65 +1,139 @@
-'''Trains a simple convnet on the MNIST dataset.
-Gets to 99.25% test accuracy after 12 epochs
-(there is still a lot of margin for parameter tuning).
-16 seconds per epoch on a GRID K520 GPU.
-'''
-from __future__ import print_function
-import keras
-from keras.datasets import mnist
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten
-from keras.layers import Conv2D, MaxPooling2D
-from keras import backend as bk
-batch_size = 128
-num_classes = 10
-epochs = 12
-# input image dimensions
-img_rows, img_cols = 28, 28
-# the data, shuffled and split between train and test sets
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-# if bk.image_data_format() == 'channels_first':
-#     x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
-#     x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
-#     input_shape = (1, img_rows, img_cols)
-# else:
-#     x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-#     x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
-#     input_shape = (img_rows, img_cols, 1)
+# -*- coding: utf-8 -*-
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import seaborn as sns
+import datetime
 
-x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
-input_shape = (img_rows, img_cols, 1)
-x_train = x_train.astype('float32')
-x_test = x_test.astype('float32')
-x_train /= 255
-x_test /= 255
-print('x_train shape:', x_train.shape)
-print(x_train.shape[0], 'train samples')
-print(x_test.shape[0], 'test samples')
-# convert class vectors to binary class matrices
-y_train = keras.utils.np_utils.to_categorical(y_train, num_classes)
-y_test = keras.utils.np_utils.to_categorical(y_test, num_classes)
+np.random.seed(2)
+
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+import itertools
+import keras
+from keras.utils.np_utils import to_categorical # convert to one-hot-encoding
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D
+from keras.optimizers import RMSprop
+from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import ReduceLROnPlateau
+
+
+sns.set(style='white', context='notebook', palette='deep')
+dataPath = "F:\\Datas\\Kaggle\\DigitRecognizer\\"
+
+i = datetime.datetime.now()
+print ("开始时间 %s" % i)
+#=========================
+# Load the data
+train = pd.read_csv(dataPath + "train.csv")
+test = pd.read_csv(dataPath + "test.csv")
+Y_train = train["label"]
+# Drop 'label' column
+X_train = train.drop(labels = ["label"],axis = 1)
+# free some space
+del train
+g = sns.countplot(Y_train)
+# Y_train.value_counts()
+
+#=========================
+# Normalize the data
+X_train = X_train / 255.0
+test = test / 255.0
+
+# Reshape image in 3 dimensions (height = 28px, width = 28px , canal = 1)
+X_train = X_train.values.reshape(-1,28,28,1)
+test = test.values.reshape(-1,28,28,1)
+# Encode labels to one hot vectors (ex : 2 -> [0,0,1,0,0,0,0,0,0,0])
+Y_train = to_categorical(Y_train, num_classes = 10)
+
+#=========================
+# Set the random seed
+random_seed = 2
+# Split the train and the validation set for the fitting
+# X_train, X_val, Y_train, Y_val = train_test_split(X_train, Y_train, test_size = 0.1, random_state=random_seed)
+#=========================
+# Set the CNN model
+# my CNN architechture is In -> [[Conv2D->relu]*2 -> MaxPool2D -> Dropout]*2 -> Flatten -> Dense -> Dropout -> Out
+
 model = Sequential()
-model.add(Conv2D(32,
-                 activation='relu',
-                 input_shape=input_shape,
-                 nb_row=3,
-                 nb_col=3))
-model.add(Conv2D(64, activation='relu',
-                 nb_row=3,
-                 nb_col=3))
-# model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.35))
+
+model.add(Conv2D(filters = 32, kernel_size = (5,5),padding = 'Same',
+                 activation ='relu', input_shape = (28,28,1)))
+model.add(Conv2D(filters = 32, kernel_size = (5,5),padding = 'Same',
+                 activation ='relu'))
+model.add(MaxPool2D(pool_size=(2,2)))
+model.add(Dropout(0.25))
+
+
+model.add(Conv2D(filters = 64, kernel_size = (3,3),padding = 'Same',
+                 activation ='relu'))
+model.add(Conv2D(filters = 64, kernel_size = (3,3),padding = 'Same',
+                 activation ='relu'))
+model.add(MaxPool2D(pool_size=(2,2), strides=(2,2)))
+model.add(Dropout(0.25))
+
+
 model.add(Flatten())
-model.add(Dense(128, activation='relu'))
+model.add(Dense(256, activation = "relu"))
 model.add(Dropout(0.5))
-model.add(Dense(num_classes, activation='softmax'))
-model.compile(loss=keras.metrics.categorical_crossentropy,
-              optimizer=keras.optimizers.Adadelta(),
-              metrics=['accuracy'])
-model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
-          verbose=1, validation_data=(x_test, y_test))
-score = model.evaluate(x_test, y_test, verbose=0)
-print('Test loss:', score[0])
-print('Test accuracy:', score[1])
+model.add(Dense(10, activation = "softmax"))
+
+# Define the optimizer
+optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
+# Compile the model
+model.compile(optimizer = optimizer , loss = "categorical_crossentropy", metrics=["accuracy"])
+# Set a learning rate annealer
+learning_rate_reduction = ReduceLROnPlateau(monitor='val_acc',
+                                            patience=3,
+                                            verbose=1,
+                                            factor=0.5,
+                                            min_lr=0.00001)
+epochs = 1 # Turn epochs to 30 to get 0.9967 accuracy
+batch_size = 86
+#=============================================================
+# Without data augmentation i obtained an accuracy of 0.98114
+#history = model.fit(X_train, Y_train, batch_size = batch_size, epochs = epochs,
+#          validation_data = (X_val, Y_val), verbose = 2)
+# With data augmentation to prevent overfitting (accuracy 0.99286)
+
+datagen = ImageDataGenerator(
+        featurewise_center=False,  # set input mean to 0 over the dataset
+        samplewise_center=False,  # set each sample mean to 0
+        featurewise_std_normalization=False,  # divide inputs by std of the dataset
+        samplewise_std_normalization=False,  # divide each input by its std
+        zca_whitening=False,  # apply ZCA whitening
+        rotation_range=10,  # randomly rotate images in the range (degrees, 0 to 180)
+        zoom_range = 0.1, # Randomly zoom image
+        width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
+        height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
+        horizontal_flip=False,  # randomly flip images
+        vertical_flip=False)  # randomly flip images
+
+
+datagen.fit(X_train)
+# Fit the model
+history = model.fit_generator(datagen.flow(X_train,Y_train, batch_size=batch_size),
+                              epochs = epochs, validation_data = (X_val,Y_val),
+                              verbose = 2, steps_per_epoch=X_train.shape[0] // batch_size
+                              , callbacks=[learning_rate_reduction])
+#==========================================================================
+print "fit finished!"
+t = datetime.datetime.now()
+print ("fit结束时间 %s" % t)
+
+# predict results
+results = model.predict(test)
+
+# select the indix with the maximum probability
+results = np.argmax(results,axis = 1)
+
+results = pd.Series(results,name="Label")
+submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
+
+submission.to_csv("cnn_mnist_datagen.csv",index=False)
+
+
+t = datetime.datetime.now()
+print ("结束时间 %s" % t)
