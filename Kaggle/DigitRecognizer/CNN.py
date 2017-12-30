@@ -90,7 +90,7 @@ learning_rate_reduction = ReduceLROnPlateau(monitor='val_acc',
                                             verbose=1,
                                             factor=0.5,
                                             min_lr=0.00001)
-epochs = 1 # Turn epochs to 30 to get 0.9967 accuracy
+epochs = 30 # Turn epochs to 30 to get 0.9967 accuracy
 batch_size = 86
 #=============================================================
 # Without data augmentation i obtained an accuracy of 0.98114
@@ -115,11 +115,11 @@ datagen = ImageDataGenerator(
 datagen.fit(X_train)
 # Fit the model
 history = model.fit_generator(datagen.flow(X_train,Y_train, batch_size=batch_size),
-                              epochs = epochs, validation_data = (X_val,Y_val),
+                              epochs = epochs,
                               verbose = 2, steps_per_epoch=X_train.shape[0] // batch_size
                               , callbacks=[learning_rate_reduction])
 #==========================================================================
-print "fit finished!"
+print ("fit finished!")
 t = datetime.datetime.now()
 print ("fit结束时间 %s" % t)
 
@@ -132,7 +132,7 @@ results = np.argmax(results,axis = 1)
 results = pd.Series(results,name="Label")
 submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
 
-submission.to_csv("cnn_mnist_datagen.csv",index=False)
+submission.to_csv(dataPath + "cnn_mnist_datagen.csv",index=False)
 
 
 t = datetime.datetime.now()
