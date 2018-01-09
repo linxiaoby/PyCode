@@ -36,9 +36,8 @@ for i in range(5):
 print fulldata.head()
 
 
-
-#向量化
 #=================================================
+#提取词干
 from nltk.stem.porter import PorterStemmer
 porter_stemmer = PorterStemmer()
 
@@ -47,4 +46,42 @@ for i in range(5):
     for word in fulldata["comment_text"][i].split():
         tmp= tmp + " " + porter_stemmer.stem(word) #波特词干算法分词器
     fulldata["comment_text"][i] = tmp
-print fulldata.head()
+print "提取词干后：",fulldata.head()
+
+#=================================================
+#向量化
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+list_fulldata = np.array(fulldata["comment_text"]).tolist() #fit_transform中必须传入可迭代的list
+vectorizer = TfidfVectorizer()
+vec_fulldata = vectorizer.fit_transform(list_fulldata).toarray()#非常稀疏，打印出来看到的几乎是0
+
+#================================================
+#准备train_X, test_X, train_y
+m1 = train.shape[0]
+train_X = vec_fulldata[:m1]
+test_X = vec_fulldata[m1:]
+
+#重新构造train_y['class']
+train_y = []
+collist = train.columns.values
+collist = collist[1:]
+for i in range(m1):
+    find = False
+    for col in collist:
+        if train[col][i] == 1:
+            find = True
+            train_y.append(str(col))
+            break
+    if find == False: #6个类别都为0，不为1, 新增类别“unkown”
+        train_y.append("unknow")
+
+#===========================================================
+train_yy = pd.DataFrame({"class":train_y})
+print train_X.shape, train_yy.shape
+from sklearn import svm
+clf = svm.SVC(probability=True)
+clf.fit(train_X, train_y)
+result1 = clf.predict(test_X)
+result = clf.predict_proba(test_X)
+print result1
