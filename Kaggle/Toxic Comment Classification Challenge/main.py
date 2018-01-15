@@ -7,6 +7,7 @@ def toxicClf():
     print("start: ", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     dataPath = "D:\\AllCode\\Datas\\Kaggle\\Toxic\\"
     train = pd.read_csv(dataPath + "train.csv\\train.csv")
+    print (train.shape)
     test = pd.read_csv(dataPath + "test.csv\\test.csv")
     test_id = test["id"]
     train = train.drop(["id"], axis=1)
