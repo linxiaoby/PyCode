@@ -89,12 +89,11 @@ while True:
 				############
 				print(ans + '\n')
 				g.write(ans + '\n')
-
+			preQuestion = curQuestion
 			kw = urllib.request.quote(kw)
 			curQuestion = urllib.request.quote(curQuestion)
 			webbrowser.open("http://www.baidu.com/s?wd=" + kw)
 			webbrowser.open("http://www.baidu.com/s?wd=" + curQuestion)
-			preQuestion = curQuestion
 		else:
 			pass
 	else:
