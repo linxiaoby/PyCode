@@ -5,15 +5,17 @@ def toxicClf():
     import time
 
     print("start: ", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-    dataPath = "D:\\AllCode\\Datas\\Kaggle\\Toxic\\"
+    # dataPath = "D:\\AllCode\\Datas\\Kaggle\\Toxic\\"
+    dataPath = "F:\\Datas\\Kaggle\\Toxic Comment Classification Challenge\\"
     train = pd.read_csv(dataPath + "train.csv\\train.csv")
     print (train.shape)
     test = pd.read_csv(dataPath + "test.csv\\test.csv")
+    print(train.shape, test.shape)
     test_id = test["id"]
     train = train.drop(["id"], axis=1)
     test = test.drop(["id"], axis=1)
-    train = train.iloc[:200,:] #取200条测试程序
-    test = test.iloc[:5, :]#取20条测试程序
+    # train = train.iloc[:1,:] #取200条测试程序
+    # test = test.iloc[:5, :]#取20条测试程序
     fulldata = pd.concat([train, test], axis=0, ignore_index=True)
     fulldata = fulldata.drop(['identity_hate', 'insult', 'obscene',
                               'severe_toxic', 'threat', 'toxic'], axis=1)
@@ -33,15 +35,22 @@ def toxicClf():
     print("开始去除无用符号、提取词干")
     m = fulldata.shape[0]
     for i in range(m):
+        fulldata["comment_text"][i] = re.sub("[\s+\.\!\/_,$%^*(+\"\']+|[+——！,.？?、~@#￥%……&*（）]",
+                     " ", str(fulldata["comment_text"][i]))  # 去除符号
+
+
+    for i in range(200000):
         if (i % 1000 == 0):
             print("第", i, "条去除停用词etc")
 
-        tmp = re.sub("[\s+\.\!\/_,$%^*(+\"\']+|[+——！,.？?、~@#￥%……&*（）]",
-                     " ", str(fulldata["comment_text"][i]))  # 去除符号
         tmp1 = ""
-        for word in tmp.split():
-            tmp1 = tmp1 + " " + porter_stemmer.stem(word)  # 波特词干算法分词器
-        fulldata["comment_text"][i] = tmp1
+        try:
+            for word in fulldata["comment_text"][i].split():
+                tmp1 = tmp1 + " " + porter_stemmer.stem(word)  # 波特词干算法分词器
+            fulldata["comment_text"][i] = tmp1
+        except:
+            print ("第",i,"条异常！")
+            print (fulldata["comment_text"][i])
 
     print("去除无用符号、提取词干完毕！")
 
