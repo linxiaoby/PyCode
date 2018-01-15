@@ -23,7 +23,7 @@ headers={
 	'User-Agent': 'Mozilla/5.0 (Linux; U; Android 7.1.1; zh-cn; MI 6 Build/NMF26X) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30',
 	'X-Live-App-Version': '1.0.7',
 	'X-Live-Device-Type': 'android',
-	'X-Live-Session-Token':'1.8732524.752912.uNA.4b0106f89dff47d413cec27498bc2636',
+	'X-Live-Session-Token':'1.15205828.1179814.ReI.54a72de6c353e87946117b9cb504e7a0', #wanglin的id
 	'Host': 'msg.api.chongdingdahui.com',
 	'Connection': 'Keep-Alive',
 	'Accept-Encoding': 'gzip',
