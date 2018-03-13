@@ -1,0 +1,1 @@
+{"code": 0, "msg": "成功", "data": {"event": {"answerTime": 10, "desc": "1.标准的足球比赛中双方各派出多少人上场？", "displayOrder": 0, "liveId": 106, "options": "[\"9\",\"11\",\"13\"]", "questionId": 1210, "showTime": 1515762116727, "status": 0, "type": "showQuestion"}, "type": "showQuestion"}}

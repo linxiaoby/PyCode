@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+﻿# -*- coding: UTF-8 -*-
 import webbrowser
 import requests
 import time
@@ -23,7 +23,7 @@ headers={
 	'X-Live-App-Version': '1.0.7',
 	'X-Live-Device-Type': 'android',
 	'X-Live-Session-Token':'1.8732524.752912.uNA.4b0106f89dff47d413cec27498bc2636',
-	'Host': 'msg.api.chongdingdahui.com',
+	'Host': 'api.api.chongdingdahui.com',
 	'Connection': 'Keep-Alive',
 	'Accept-Encoding': 'gzip',
 	'Cache-Control': 'no-cache'
