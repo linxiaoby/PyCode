@@ -1,18 +1,22 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
+import logging
+logging.basicConfig(level = logging.DEBUG, format ='%(asctime)s  - %(levelname)s - %(message)s')
+logger = logging.getLogger()
 import os
 import time
 import numpy as np
 import tensorflow as tf
-
+import gensim
 import model
 from data_reader import load_data, DataReader
 
 flags = tf.flags
-DATA_DIR = "D:\\AllCode\\Datas\\NLP\\my_extractive_tiny\\data\\demo"
-TRAIN_DIR = "D:\\AllCode\\Datas\\NLP\\my_extractive_tiny\\cv"
+DATA_PATH = "D:\\AllCode\\Datas\\NLP\\my_extractive_tiny\\"
+DATA_DIR = DATA_PATH + "data\\demo"
+TRAIN_DIR = DATA_PATH + "cv"
+EMBEDDING_PATH = DATA_PATH + "data\\GoogleNews-vectors-negative300.bin"
 # data
 flags.DEFINE_string('data_dir', DATA_DIR,'data directory. Should contain train.txt/valid.txt/test.txt with input data')
 flags.DEFINE_string('train_dir', TRAIN_DIR, 'training directory (models and summaries are saved there periodically)')
@@ -21,10 +25,10 @@ flags.DEFINE_string('load_model', None,
 
 # model params
 flags.DEFINE_string('model_choice', 'lstm', 'model choice')
-flags.DEFINE_string('embedding_path', None, 'pretrained emebdding path')
+flags.DEFINE_string('embedding_path', EMBEDDING_PATH, 'pretrained emebdding path')
 flags.DEFINE_integer('rnn_size', 650, 'size of LSTM internal state')
 flags.DEFINE_integer('highway_layers', 2, 'number of highway layers')
-flags.DEFINE_integer('word_embed_size', 50, 'dimensionality of word embeddings')
+flags.DEFINE_integer('word_embed_size', 300, 'dimensionality of word embeddings')
 flags.DEFINE_string('kernels', '[1,2,3,4,5,6,7]', 'CNN kernel widths')
 flags.DEFINE_string('kernel_features', '[50,100,150,200,200,200,200]', 'number of features in the CNN kernel')
 flags.DEFINE_integer('rnn_layers', 2, 'number of layers in the LSTM')
@@ -35,7 +39,7 @@ flags.DEFINE_float('learning_rate_decay', 0.5, 'learning rate decay')
 flags.DEFINE_float('learning_rate', 1.0, 'starting learning rate')
 flags.DEFINE_float('decay_when', 1.0, 'decay if validation perplexity does not improve by more than this much')
 flags.DEFINE_float('param_init', 0.05, 'initialize parameters at')
-flags.DEFINE_integer('batch_size', 20, 'number of sequences to train on in parallel')
+flags.DEFINE_integer('batch_size', 3, 'number of sequences to train on in parallel')
 flags.DEFINE_integer('max_epochs', 25, 'number of full passes through the training data')
 flags.DEFINE_float('max_grad_norm', 5.0, 'normalize gradients at')
 flags.DEFINE_integer('max_doc_length', 15, 'max_doc_length')  #max length limit of article
@@ -69,19 +73,36 @@ def run_test(session, m, data, batch_size, num_steps):
 
     return costs / iters
 
+#
+# def load_wordvec(embedding_path, word_vocab):
+#     '''
+#     loads pretrained word vectors
+#     deprecated
+#     '''
+#
+#     initW = np.random.uniform(-0.25, 0.25, (word_vocab.size, FLAGS.word_embed_size)) #dimensionality of word embeddings
+#
+#     with open(embedding_path, "r") as f:
+#         for line in f:
+#             line = line.rstrip().split(' ')
+#             word, vec = line[0], line[1:]
+#             if word_vocab.token2index.has_key(word):
+#                 initW[word_vocab[word]] = np.asarray([float(x) for x in vec])
+#     return initW
 
 def load_wordvec(embedding_path, word_vocab):
     '''loads pretrained word vectors'''
+    initW = np.random.uniform(-0.25, 0.25, (word_vocab.size, FLAGS.word_embed_size)) #dimensionality of word embeddings
 
-    initW = np.random.uniform(-0.25, 0.25, (word_vocab.size, FLAGS.word_embed_size))
-    with open(embedding_path, "r") as f:
-        for line in f:
-            line = line.rstrip().split(' ')
-            word, vec = line[0], line[1:]
-            if word_vocab.token2index.has_key(word):
-                initW[word_vocab[word]] = np.asarray([float(x) for x in vec])
+    #deleted for simple test
+    # model = gensim.models.KeyedVectors.load_word2vec_format(embedding_path, binary=True)
+    # for key in word_vocab.token2index.keys():
+    #     try:
+    #         initW[word_vocab[key]] = np.array(model.wv[key])
+    #     except Exception as e:
+    #         logger.exception(e)
+    logger.info("finish load_wordvec")
     return initW
-
 
 def build_model(word_vocab, max_doc_length, train):
     '''build a training or inference graph, based on the model choice'''
@@ -130,7 +151,7 @@ def build_model(word_vocab, max_doc_length, train):
 
                 pretrained=pretrained_emb)
 
-            my_model.update(model.lstm_doc_enc(my_model.input_cnn,
+            my_model.update(model.lstm_doc_enc(my_model.input_cnn, #2 lstm layers
                                                batch_size=FLAGS.batch_size,
                                                num_rnn_layers=FLAGS.rnn_layers,
                                                rnn_size=FLAGS.rnn_size,
@@ -228,7 +249,7 @@ def main(_):
 
     print('initialized all dataset readers')
 
-    with tf.Graph().as_default(), tf.Session() as session:
+    with tf.Graph().as_default(), tf.Session() as session: #tf.Session() will launch the graph
 
         # tensorflow seed must be inside graph
         tf.set_random_seed(FLAGS.seed)
@@ -269,11 +290,11 @@ def main(_):
             epoch_start_time = time.time()
             avg_train_loss = 0.0
             count = 0
-            for x, y in train_reader.iter():
+            for x, y in train_reader.iter(): # every time a batch data
                 count += 1
                 start_time = time.time()
 
-                loss, _, gradient_norm, step, _ = session.run([
+                loss, _, gradient_norm, step, _ = session.run([ #return 5 var:new loss
                     train_model.loss,
                     train_model.train_op,
                     train_model.global_norm,

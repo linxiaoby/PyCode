@@ -11,25 +11,29 @@ import model
 from data_reader import load_data, DataReader
 
 flags = tf.flags
+DATA_PATH = "D:\\AllCode\\Datas\\NLP\\my_extractive_tiny\\"
+DATA_DIR = DATA_PATH + "data\\demo"
+TRAIN_DIR = DATA_PATH + "cv"
+EMBEDDING_PATH = DATA_PATH + "data\\GoogleNews-vectors-negative300.bin"# data
+LOAD_MODEL = DATA_PATH + "cv\\epoch021_1.0330.model"
 
-# data
-flags.DEFINE_string('data_dir', 'data/demo',
+flags.DEFINE_string('data_dir', DATA_DIR,
                     'data directory. Should contain train.txt/valid.txt/test.txt with input data')
-flags.DEFINE_string('train_dir', 'cv', 'training directory (models and summaries are saved there periodically)')
-flags.DEFINE_string('load_model', None,
+flags.DEFINE_string('train_dir', DATA_PATH + "cv", 'training directory (models and summaries are saved there periodically)')
+flags.DEFINE_string('load_model', LOAD_MODEL,
                     '(optional) filename of the model to load. Useful for re-starting training from a checkpoint')
 
 # model params
 flags.DEFINE_string('model_choice', 'lstm', 'model choice')
 flags.DEFINE_integer('rnn_size', 650, 'size of LSTM internal state')
 flags.DEFINE_integer('highway_layers', 2, 'number of highway layers')
-flags.DEFINE_integer('word_embed_size', 50, 'dimensionality of word embeddings')
+flags.DEFINE_integer('word_embed_size', 300, 'dimensionality of word embeddings')
 flags.DEFINE_string('kernels', '[1,2,3,4,5,6,7]', 'CNN kernel widths')
 flags.DEFINE_string('kernel_features', '[50,100,150,200,200,200,200]', 'number of features in the CNN kernel')
 flags.DEFINE_integer('rnn_layers', 2, 'number of layers in the LSTM')
 
 # optimization
-flags.DEFINE_integer('batch_size', 20, 'number of sequences to train on in parallel')
+flags.DEFINE_integer('batch_size', 2, 'number of sequences to train on in parallel')
 flags.DEFINE_integer('max_doc_length', 15, 'max_doc_length')
 flags.DEFINE_integer('max_sen_length', 50, 'maximum sentence length')
 flags.DEFINE_float('weight_2', 0.5, 'how much do we count about label 2')
@@ -173,6 +177,7 @@ def main(_):
                 result_scores = np.vstack((result_scores, total_scores))
 
         save_as = '%s/scores' % (FLAGS.train_dir)
+        print(result_scores)
         np.savetxt(save_as, result_scores, delimiter=' ')
         time_elapsed = time.time() - start_time
 
